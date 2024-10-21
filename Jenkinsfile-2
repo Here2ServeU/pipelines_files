@@ -1,0 +1,69 @@
+pipeline {
+    agent any
+    environment {
+        AWS_REGION = 'us-east-1' // Update this if necessary
+        ECR_REPO_NAME = 't2s-web-app'
+        IMAGE_TAG = "${env.BUILD_ID}"
+        ECR_URI = "YOUR_AWS_ACCOUNT_ID.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}:${IMAGE_TAG}"
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Login to ECR') {
+            steps {
+                script {
+                    sh '''
+                        # Authenticate Docker to ECR
+                        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URI
+                    '''
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh '''
+                        # Build Docker image
+                        docker build -t ${ECR_REPO_NAME}:${IMAGE_TAG} .
+                    '''
+                }
+            }
+        }
+
+        stage('Push Docker Image to ECR') {
+            steps {
+                script {
+                    sh '''
+                        # Tag the image
+                        docker tag ${ECR_REPO_NAME}:${IMAGE_TAG} $ECR_URI
+                        
+                        # Push image to ECR
+                        docker push $ECR_URI
+                    '''
+                }
+            }
+        }
+
+        stage('Scan Image with Trivy') {
+            steps {
+                script {
+                    sh '''
+                        # Scan the image using Trivy
+                        trivy image $ECR_URI || echo "Vulnerability scanning failed!"
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs() // Clean workspace after build
+        }
+    }
+}
