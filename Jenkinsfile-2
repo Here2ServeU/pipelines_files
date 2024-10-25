@@ -4,7 +4,7 @@ pipeline {
         AWS_REGION = 'us-east-1' // Update this if necessary
         ECR_REPO_NAME = 't2s-web-app'
         IMAGE_TAG = "${env.BUILD_ID}"
-        ECR_URI = "YOUR_AWS_ACCOUNT_ID.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}:${IMAGE_TAG}"
+        ECR_URI = "730335276920.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}:${IMAGE_TAG}"
     }
     stages {
         stage('Checkout') {
